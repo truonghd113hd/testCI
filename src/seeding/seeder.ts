@@ -62,12 +62,12 @@ async function main() {
     const reverseSeeders = seeders.slice().reverse();
     await bluebird.each(reverseSeeders, async (seederPath) => {
       const { seeder } = await import(seederPath);
-      return seeder?.down();
+      return seeder.down();
     });
 
     await bluebird.each(seeders, async (seederPath) => {
       const { seeder } = await import(seederPath);
-      return seeder?.up();
+      return seeder.up();
     });
 
     console.log('All seeders done');
