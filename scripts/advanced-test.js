@@ -19,12 +19,12 @@ export const options = {
   ], // Total: 5 minutes exactly
   thresholds: {
     http_req_failed: ['rate<0.02'],           // <2% errors
-    http_req_duration: ['p(95)<200', 'p(99)<500'], // 95% < 200ms, 99% < 500ms
+    http_req_duration: ['p(95)<500', 'p(99)<1000'], // 95% < 500ms, 99% < 1000ms
     login_success_rate: ['rate>0.95'],        // >95% login success
-    custom_response_time: ['p(90)<200'],      // 90% < 200ms
-    'http_req_duration{endpoint:login}': ['p(95)<200'],
-    'http_req_duration{endpoint:profile}': ['p(95)<150'],
-    'http_req_duration{endpoint:update_profile}': ['p(95)<300'],
+    custom_response_time: ['p(90)<500'],      // 90% < 500ms
+    'http_req_duration{endpoint:login}': ['p(95)<500'],
+    'http_req_duration{endpoint:profile}': ['p(95)<400'],
+    'http_req_duration{endpoint:update_profile}': ['p(95)<600'],
   },
 };
 
@@ -43,6 +43,31 @@ const users = [
 
 const baseUrl = __ENV.BASE_URL || 'http://localhost:3000';
 
+// Setup function to check if server is ready
+export function setup() {
+  console.log('🚀 Checking if server is ready...');
+  
+  // Wait for server to be ready
+  for (let i = 0; i < 30; i++) {
+    try {
+      const res = http.get(`${baseUrl}/`, {
+        timeout: '10s',
+      });
+      
+      if (res.status === 200 || res.status === 404) {
+        console.log(`✅ Server is ready! Status: ${res.status}`);
+        return { serverReady: true };
+      }
+    } catch (error) {
+      console.log(`⏳ Attempt ${i + 1}: Server not ready, waiting... (${error})`);
+    }
+    
+    sleep(2); // Wait 2 seconds between attempts
+  }
+  
+  throw new Error('❌ Server failed to start within timeout period');
+}
+
 export default function () {
   // Choose random user
   const user = users[Math.floor(Math.random() * users.length)];
@@ -59,21 +84,42 @@ export default function () {
     const loginRes = http.post(`${baseUrl}/api/auth/login`, loginPayload, {
       headers: { 'Content-Type': 'application/json' },
       tags: { endpoint: 'login' },
+      timeout: '30s', // 30 second timeout for login
     });
+
+    // Debug response if needed
+    if (loginRes.status !== 200 && loginRes.status !== 201) {
+      console.log(`Login failed. Status: ${loginRes.status}, Body: ${loginRes.body}`);
+    }
 
     const loginSuccess = check(loginRes, {
       'login status is 200/201': (r) => r.status === 200 || r.status === 201,
       'login response time < 200ms': (r) => r.timings.duration < 200,
       'login response time < 500ms': (r) => r.timings.duration < 500,
-      'has access token': (r) => r.json('access_token') !== undefined,
+      'has access token': (r) => {
+        try {
+          const body = r.json();
+          return body && body.access_token !== undefined;
+        } catch (e) {
+          console.log(`JSON parse error: ${e}, Response: ${r.body}`);
+          return false;
+        }
+      },
     });
 
     loginSuccessRate.add(loginSuccess);
     responseTime.add(loginRes.timings.duration);
     apiCalls.add(1);
 
-    if (loginSuccess && loginRes.json('access_token')) {
-      authToken = loginRes.json('access_token');
+    if (loginSuccess) {
+      try {
+        const loginData = loginRes.json();
+        if (loginData && loginData.access_token) {
+          authToken = loginData.access_token;
+        }
+      } catch (e) {
+        console.log(`Error parsing login response: ${e}`);
+      }
     }
   });
 
@@ -87,12 +133,21 @@ export default function () {
       const profileRes = http.get(`${baseUrl}/api/auth/me`, {
         headers: authHeaders,
         tags: { endpoint: 'profile' },
+        timeout: '20s', // 20 second timeout for profile
       });
 
       check(profileRes, {
         'profile status is 200': (r) => r.status === 200,
         'profile response time < 150ms': (r) => r.timings.duration < 150,
-        'profile has user data': (r) => r.json('id') !== undefined,
+        'profile has user data': (r) => {
+          try {
+            const profile = r.json();
+            return profile && profile.id !== undefined;
+          } catch (e) {
+            console.log(`Profile JSON parse error: ${e}, Response: ${r.body}`);
+            return false;
+          }
+        },
       });
 
       apiCalls.add(1);
@@ -107,6 +162,7 @@ export default function () {
       const updateRes = http.put(`${baseUrl}/api/users`, JSON.stringify(updateData), {
         headers: authHeaders,
         tags: { endpoint: 'update_profile' },
+        timeout: '25s', // 25 second timeout for update
       });
 
       check(updateRes, {

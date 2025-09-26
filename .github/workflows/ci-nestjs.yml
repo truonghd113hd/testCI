@@ -204,6 +204,16 @@ jobs:
           PGPASSWORD=db_password@123 psql -h localhost -U db_user_name -d be-template -f docker/test-data.sql
           touch /tmp/db-setup-done
 
+      - name: Verify services are ready
+        run: |
+          echo "🔍 Checking database connection..."
+          PGPASSWORD=db_password@123 psql -h localhost -U db_user_name -d be-template -c "SELECT 1;" || exit 1
+          echo "✅ Database is ready"
+          
+          echo "🔍 Checking Redis connection..."
+          redis-cli -h localhost ping || exit 1
+          echo "✅ Redis is ready"
+
       - name: Start application with CI config
         env:
           NODE_ENV: test
@@ -216,9 +226,34 @@ jobs:
           REDIS_PORT: 6379
           JWT_SECRET: ci_test_jwt_secret_key_2024
         run: |
+          echo "🚀 Starting NestJS application..."
           npm run start:prod &
-          sleep 20
-          curl --retry 15 --retry-delay 2 --retry-connrefused http://localhost:3000/ || exit 1
+          APP_PID=$!
+          echo "Application started with PID: $APP_PID"
+          
+          # Wait for application to be ready with better health check
+          echo "⏳ Waiting for application to be ready..."
+          for i in {1..30}; do
+            echo "Attempt $i: Checking http://localhost:3000/"
+            if curl -f -s http://localhost:3000/ >/dev/null 2>&1; then
+              echo "✅ Application is ready after ${i}0 seconds"
+              curl -I http://localhost:3000/
+              break
+            elif [ $i -eq 30 ]; then
+              echo "❌ Application failed to start within 5 minutes"
+              echo "Process status:"
+              ps aux | grep node || true
+              echo "Port 3000 status:"
+              netstat -tlnp | grep :3000 || true
+              echo "Application logs:"
+              jobs -l
+              kill $APP_PID 2>/dev/null || true
+              exit 1
+            else
+              echo "Application not ready yet, waiting 10 seconds..."
+              sleep 10
+            fi
+          done
 
       - name: Create k6 database
         run: |
@@ -226,7 +261,8 @@ jobs:
 
       - name: Run k6 load test
         run: |
-          npm run k6
+          echo "🎯 Running k6 advanced load test..."
+          npm run k6:advanced
 
       - name: Upload k6 results
         if: always()
