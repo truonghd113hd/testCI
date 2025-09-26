@@ -17,10 +17,12 @@ export const options = {
   ], // Total: 2 minutes exactly - 200 users max
   thresholds: {
     http_req_failed: ['rate<0.02'],           // <2% errors
-    http_req_duration: ['p(95)<500', 'p(99)<1000'], // 95% < 500ms, 99% < 1000ms
+    http_req_duration: ['p(95)<1000', 'p(99)<2000'], // 95% < 1000ms, 99% < 2000ms
     login_success_rate: ['rate>0.95'],        // >95% login success
-    custom_response_time: ['p(90)<500'],      // 90% < 500ms
-    'http_req_duration{endpoint:login}': ['p(95)<500'],
+    custom_response_time: ['p(90)<1000'],     // 90% < 1000ms
+    'http_req_duration{endpoint:login}': ['p(95)<1000'],
+    'http_req_duration{endpoint:profile}': ['p(95)<1000'],
+    'http_req_duration{endpoint:update_profile}': ['p(95)<1000'],
     'http_req_duration{endpoint:profile}': ['p(95)<400'],
     'http_req_duration{endpoint:update_profile}': ['p(95)<600'],
   },

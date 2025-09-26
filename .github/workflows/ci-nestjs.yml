@@ -286,3 +286,11 @@ jobs:
         with:
           name: k6-results
           path: k6-results.json
+
+      - name: Stop NestJS application
+        if: always()
+        run: |
+          echo "🛑 Stopping NestJS application..."
+          pkill -f "node dist/src/main" || pkill -f "node src/main" || true
+          sleep 2
+          echo "✅ Application stopped."
