@@ -18,7 +18,7 @@ const mockUsers = [
 ];
 
 export default function () {
-  const baseUrl = 'http://localhost:3000';
+  const baseUrl = 'http://localhost:3001';
 
   // 1. Test login with mock user data
   const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
@@ -51,7 +51,7 @@ export default function () {
     };
 
     // Test get user profile
-    const profileRes = http.get(`${baseUrl}/api/Auth/me`, { headers: authHeaders });
+    const profileRes = http.get(`${baseUrl}/api/auth/me`, { headers: authHeaders });
     check(profileRes, {
       'profile fetch ok': (r) => r.status === 200,
       'profile has user data': (r) => r.json('username') !== undefined,

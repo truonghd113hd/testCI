@@ -250,17 +250,17 @@ jobs:
           # Wait for application to be ready with better health check
           echo "⏳ Waiting for application to be ready..."
           for i in {1..30}; do
-            echo "Attempt $i: Checking http://localhost:3000/"
-            if curl -f -s http://localhost:3000/ >/dev/null 2>&1; then
+            echo "Attempt $i: Checking http://localhost:3001/"
+            if curl -f -s http://localhost:3001/ >/dev/null 2>&1; then
               echo "✅ Application is ready after ${i}0 seconds"
-              curl -I http://localhost:3000/
+              curl -I http://localhost:3001/
               break
             elif [ $i -eq 30 ]; then
               echo "❌ Application failed to start within 5 minutes"
               echo "Process status:"
               ps aux | grep node || true
-              echo "Port 3000 status:"
-              netstat -tlnp | grep :3000 || true
+              echo "Port 3001 status:"
+              netstat -tlnp | grep :3001 || true
               echo "Application logs:"
               jobs -l
               kill $APP_PID 2>/dev/null || true

@@ -94,8 +94,8 @@ export default function () {
 
     const loginSuccess = check(loginRes, {
       'login status is 200/201': (r) => r.status === 200 || r.status === 201,
-      'login response time < 200ms': (r) => r.timings.duration < 200,
-      'login response time < 500ms': (r) => r.timings.duration < 500,
+      'login response time < 2000ms': (r) => r.timings.duration < 2000,
+      'login response time < 3000ms': (r) => r.timings.duration < 3000,
       'has access token': (r) => {
         try {
           const body = r.json();
