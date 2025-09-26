@@ -18,12 +18,12 @@ const mockUsers = [
 ];
 
 export default function () {
-  const baseUrl = 'http://localhost:3000/api';
+  const baseUrl = 'http://localhost:3000';
   
   // 1. Test login with mock user data
   const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
   const loginRes = http.post(
-    `${baseUrl}/auth/login`,
+    `${baseUrl}/api/auth/login`,
     JSON.stringify({
       username: randomUser.username,
       password: randomUser.password,
