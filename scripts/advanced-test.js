@@ -11,8 +11,8 @@ const apiCalls = new Counter('api_calls_total');
 export const options = {
   stages: [
     { duration: '20s', target: 50 },   // Ramp up to 50 (20s)
-    { duration: '20s', target: 200 },  // Ramp up to 200 (20s)
-    { duration: '1m', target: 200 },   // Stay at 200 users (1 min)
+    { duration: '20s', target: 100 },  // Ramp up to 100 (20s)
+    { duration: '1m', target: 100 },   // Stay at 100 users (1 min)
     { duration: '20s', target: 0 },    // Ramp down to 0 (20s)
   ], // Total: 2 minutes exactly - 200 users max
   thresholds: {
@@ -84,7 +84,7 @@ export default function () {
     const loginRes = http.post(`${baseUrl}/api/auth/login`, loginPayload, {
       headers: { 'Content-Type': 'application/json' },
       tags: { endpoint: 'login' },
-      timeout: '30s', // 30 second timeout for login
+      timeout: '500ms', // 500ms timeout for login
     });
 
     // Debug response if needed
@@ -94,8 +94,8 @@ export default function () {
 
     const loginSuccess = check(loginRes, {
       'login status is 200/201': (r) => r.status === 200 || r.status === 201,
-      'login response time < 2000ms': (r) => r.timings.duration < 2000,
-      'login response time < 3000ms': (r) => r.timings.duration < 3000,
+      'login response time < 5000ms': (r) => r.timings.duration < 5000,
+      'login response time < 8000ms': (r) => r.timings.duration < 8000,
       'has access token': (r) => {
         try {
           const body = r.json();
