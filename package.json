@@ -21,6 +21,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/.bin/typeorm",
+    "migration:run": "npm run typeorm -- migration:run -d datasource.ts",
     "seed:run": "ts-node -r tsconfig-paths/register",
     "worker": "ts-node -r tsconfig-paths/register ./src/worker.ts",
     "k6": "k6 run src/modules/__tests__/LoadTest/script.js",

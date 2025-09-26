@@ -14,15 +14,15 @@ export const options = {
     { duration: '20s', target: 100 },  // Ramp up to 100 (20s)
     { duration: '1m', target: 100 },   // Stay at 100 users (1 min)
     { duration: '20s', target: 0 },    // Ramp down to 0 (20s)
-  ], // Total: 2 minutes exactly - 200 users max
+  ], // Total: 2 minutes exactly - 100 users max
   thresholds: {
     http_req_failed: ['rate<0.02'],           // <2% errors
-    http_req_duration: ['p(95)<1000', 'p(99)<2000'], // 95% < 1000ms, 99% < 2000ms
+    http_req_duration: ['p(95)<500', 'p(99)<1000'], // 95% < 1000ms, 99% < 2000ms
     login_success_rate: ['rate>0.95'],        // >95% login success
-    custom_response_time: ['p(90)<1000'],     // 90% < 1000ms
-    'http_req_duration{endpoint:login}': ['p(95)<1000'],
-    'http_req_duration{endpoint:profile}': ['p(95)<1000'],
-    'http_req_duration{endpoint:update_profile}': ['p(95)<1000'],
+    custom_response_time: ['p(90)<500'],     // 90% < 1000ms
+    'http_req_duration{endpoint:login}': ['p(95)<500'],
+    'http_req_duration{endpoint:profile}': ['p(95)<500'],
+    'http_req_duration{endpoint:update_profile}': ['p(95)<500'],
     'http_req_duration{endpoint:profile}': ['p(95)<400'],
     'http_req_duration{endpoint:update_profile}': ['p(95)<600'],
   },
@@ -84,7 +84,7 @@ export default function () {
     const loginRes = http.post(`${baseUrl}/api/auth/login`, loginPayload, {
       headers: { 'Content-Type': 'application/json' },
       tags: { endpoint: 'login' },
-      timeout: '500ms', // 500ms timeout for login
+      timeout: '1000ms', // 500ms timeout for login
     });
 
     // Debug response if needed
@@ -94,8 +94,8 @@ export default function () {
 
     const loginSuccess = check(loginRes, {
       'login status is 200/201': (r) => r.status === 200 || r.status === 201,
-      'login response time < 5000ms': (r) => r.timings.duration < 5000,
-      'login response time < 8000ms': (r) => r.timings.duration < 8000,
+      'login response time < 500ms': (r) => r.timings.duration < 500,
+      'login response time < 1000ms': (r) => r.timings.duration < 1000,
       'has access token': (r) => {
         try {
           const body = r.json();

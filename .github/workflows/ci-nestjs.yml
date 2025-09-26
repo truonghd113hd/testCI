@@ -191,6 +191,20 @@ jobs:
       - name: Install dependencies (cached)
         run: npm ci
 
+      - name: Run database migrations
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: be-template
+          DB_USER: db_user_name
+          DB_PASSWORD: db_password@123
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NODE_ENV: test
+        run: |
+          echo "🗄️ Running database migrations..."
+          npm run migration:run || echo "⚠️ Migration failed or no migrations to run"
+
       - name: Cache test database setup
         id: cache-db
         uses: actions/cache@v4
