@@ -52,6 +52,8 @@ export default function () {
     const loginPayload = JSON.stringify({
       email: user.email,
       password: user.password,
+      fcm_token: 'fcm_token_123456',
+      os: 'android',
     });
 
     const loginRes = http.post(`${baseUrl}/api/auth/login`, loginPayload, {
