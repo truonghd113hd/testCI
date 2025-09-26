@@ -160,8 +160,7 @@ jobs:
 
       - name: Install k6
         run: |
-          sudo apt-get update
-          sudo apt-get install -y k6
+          curl -s https://k6.io/install.sh | sudo bash
 
       - name: Start application with CI config
         env:
