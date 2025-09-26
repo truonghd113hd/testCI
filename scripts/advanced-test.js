@@ -19,8 +19,7 @@ export const options = {
   ],
   thresholds: {
     http_req_failed: ['rate<0.02'],           // <2% errors
-    http_req_duration: ['p(95)<200'],         // 95% < 200ms
-    http_req_duration: ['p(99)<500'],         // 99% < 500ms
+    http_req_duration: ['p(95)<200', 'p(99)<500'], // 95% < 200ms, 99% < 500ms
     login_success_rate: ['rate>0.95'],        // >95% login success
     custom_response_time: ['p(90)<200'],      // 90% < 200ms
     'http_req_duration{endpoint:login}': ['p(95)<200'],
