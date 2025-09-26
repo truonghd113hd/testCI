@@ -50,7 +50,7 @@ export default function () {
 
   group('Authentication', () => {
     const loginPayload = JSON.stringify({
-      email: user.email,
+      username: user.email,
       password: user.password,
       fcm_token: 'fcm_token_123456',
       os: 'android',
@@ -84,7 +84,7 @@ export default function () {
     };
 
     group('User Profile', () => {
-      const profileRes = http.get(`${baseUrl}/api/users/me`, {
+      const profileRes = http.get(`${baseUrl}/api/auth/me`, {
         headers: authHeaders,
         tags: { endpoint: 'profile' },
       });
@@ -99,12 +99,12 @@ export default function () {
 
       // Test updateMe endpoint
       const updateData = {
-        firstName: `LoadTest${Math.floor(Math.random() * 1000)}`,
-        lastName: `User${Math.floor(Math.random() * 1000)}`,
-        bio: `Updated bio at ${new Date().toISOString()}`,
+        full_name: `TestUser${Math.floor(Math.random() * 1000)}`,
+        height_cm: Math.floor(Math.random() * 50) + 150,
+        weight_kg: Math.floor(Math.random() * 50) + 50,
       };
 
-      const updateRes = http.put(`${baseUrl}/api/users/me`, JSON.stringify(updateData), {
+      const updateRes = http.put(`${baseUrl}/api/users`, JSON.stringify(updateData), {
         headers: authHeaders,
         tags: { endpoint: 'update_profile' },
       });

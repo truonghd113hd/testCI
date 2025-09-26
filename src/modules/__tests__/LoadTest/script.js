@@ -14,12 +14,12 @@ export const options = {
 const mockUsers = [
   { username: 'testuser1', email: 'test1@example.com', password: 'password123' },
   { username: 'testuser2', email: 'test2@example.com', password: 'password123' },
-  { username: 'loadtest', email: 'loadtest@example.com', password: 'password123' }
+  { username: 'loadtest', email: 'loadtest@example.com', password: 'password123' },
 ];
 
 export default function () {
   const baseUrl = 'http://localhost:3000';
-  
+
   // 1. Test login with mock user data
   const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
   const loginRes = http.post(
@@ -32,7 +32,7 @@ export default function () {
     }),
     { headers: { 'Content-Type': 'application/json' } },
   );
-  
+
   check(loginRes, {
     'login successful': (r) => r.status === 200 || r.status === 201,
     'login has token': (r) => r.json('access_token') !== undefined,
@@ -46,12 +46,12 @@ export default function () {
   // 2. Test authenticated endpoints
   if (authToken) {
     const authHeaders = {
-      'Authorization': `Bearer ${authToken}`,
-      'Content-Type': 'application/json'
+      Authorization: `Bearer ${authToken}`,
+      'Content-Type': 'application/json',
     };
 
     // Test get user profile
-    const profileRes = http.get(`${baseUrl}/api/users/me`, { headers: authHeaders });
+    const profileRes = http.get(`${baseUrl}/api/Auth/me`, { headers: authHeaders });
     check(profileRes, {
       'profile fetch ok': (r) => r.status === 200,
       'profile has user data': (r) => r.json('username') !== undefined,
@@ -59,20 +59,18 @@ export default function () {
 
     // Test update user profile
     const updateData = {
-      firstName: `TestUser${Math.floor(Math.random() * 1000)}`,
-      lastName: `LoadTest${Math.floor(Math.random() * 1000)}`,
-      bio: `Profile updated during load test at ${new Date().toISOString()}`,
+      full_name: `TestUser${Math.floor(Math.random() * 1000)}`,
+      height_cm: Math.floor(Math.random() * 50) + 150,
+      weight_kg: Math.floor(Math.random() * 50) + 50,
     };
 
-    const updateRes = http.put(`${baseUrl}/api/users/me`, JSON.stringify(updateData), { headers: authHeaders });
+    const updateRes = http.put(`${baseUrl}/api/users`, JSON.stringify(updateData), { headers: authHeaders });
     check(updateRes, {
       'profile update responds': (r) => r.status === 200 || r.status === 400,
       'profile update no server error': (r) => r.status !== 500,
       'profile update has response': (r) => r.body.length > 0,
     });
-
   }
-
 
   sleep(1);
 }

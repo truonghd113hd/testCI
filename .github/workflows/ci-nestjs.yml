@@ -116,9 +116,9 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: be-template
+          POSTGRES_USER: db_user_name
+          POSTGRES_PASSWORD: db_password@123
         ports:
           - 5432:5432
         options: >-
@@ -201,7 +201,7 @@ jobs:
       - name: Setup test database
         if: steps.cache-db.outputs.cache-hit != 'true'
         run: |
-          PGPASSWORD=test_pass psql -h localhost -U test_user -d test_db -f docker/test-data.sql
+          PGPASSWORD=db_password@123 psql -h localhost -U db_user_name -d be-template -f docker/test-data.sql
           touch /tmp/db-setup-done
 
       - name: Start application with CI config
@@ -209,9 +209,9 @@ jobs:
           NODE_ENV: test
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_NAME: test_db
-          DB_USER: test_user
-          DB_PASSWORD: test_pass
+          DB_NAME: be-template
+          DB_USER: db_user_name
+          DB_PASSWORD: db_password@123
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: ci_test_jwt_secret_key_2024
