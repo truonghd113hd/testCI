@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- Insert mock users cho testing
 INSERT INTO users (username, email, password_hash) VALUES 
-('testuser1', 'test1@example.com', '$2b$10$dummy.hash.for.testing'),
-('testuser2', 'test2@example.com', '$2b$10$dummy.hash.for.testing'),
-('loadtest', 'loadtest@example.com', '$2b$10$dummy.hash.for.testing');
+('testuser1', 'test1@example.com', '$2b$10$k8.fN/XvtWdjRZitcDn.v.5oVnWISnVKqdHhTOcCKMZmXq7qkfvMa'),
+('testuser2', 'test2@example.com', '$2b$10$k8.fN/XvtWdjRZitcDn.v.5oVnWISnVKqdHhTOcCKMZmXq7qkfvMa'),
+('loadtest', 'loadtest@example.com', '$2b$10$k8.fN/XvtWdjRZitcDn.v.5oVnWISnVKqdHhTOcCKMZmXq7qkfvMa');
 
 -- Insert mock products
 INSERT INTO products (name, price, stock) VALUES 
