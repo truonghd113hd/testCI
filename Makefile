@@ -14,8 +14,28 @@ docker-local-up:
 
 docker-local-down:
 	docker compose -f  docker/docker-compose.local.yml down
+
 docker-local-down-v:
 	docker compose -f  docker/docker-compose.local.yml down -v
+
+# K6 Load Testing Commands
+k6-setup: ## Setup k6 testing environment
+	docker-compose -f docker/docker-compose.yml up -d influxdb grafana
+	sleep 10
+	curl -i -XPOST 'http://localhost:8086/query' --data-urlencode "q=CREATE DATABASE k6" || true
+
+k6-local: ## Run local k6 test
+	npm run k6:advanced
+
+k6-ci: ## Run CI-optimized k6 test
+	TEST_MODE=safe npm run k6:ci
+
+k6-cloud: ## Run k6 test on cloud
+	npm run k6:cloud
+
+k6-clean: ## Clean up k6 environment
+	docker-compose -f docker/docker-compose.yml down
+	rm -f k6-results.json
 
 docker-local-config:
 	docker compose -f  docker/docker-compose.local.yml config
