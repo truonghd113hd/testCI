@@ -13,8 +13,8 @@ export const options = {
 export default function () {
   // Test login
   const loginPayload = JSON.stringify({
-    username: 'truonghd1994@gmail.com',
-    password: 'congtuma123',
+    username: __ENV.USERNAME,
+    password: __ENV.PASSWORD,
   });
   const loginHeaders = { 'Content-Type': 'application/json' };
   const loginRes = http.post('http://localhost:3000/api/auth/login', loginPayload, { headers: loginHeaders });
