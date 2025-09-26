@@ -1,33 +1,16 @@
 -- Mock data cho load testing
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Xoá dữ liệu cũ nếu có
+DELETE FROM "user_credential";
+DELETE FROM "user";
+-- Insert mock data cho user table (NestJS entities)
+INSERT INTO "user" (id, full_name, email, username, status, date_of_birth, gender, phone_number, height_cm, weight_kg, created_at, updated_at) VALUES 
+(1, 'Test User 1', 'test1@example.com', 'testuser1', 'active', '1990-01-01', 'male', '0123456789', 170, 70, NOW(), NOW()),
+(2, 'Test User 2', 'test2@example.com', 'testuser2', 'active', '1992-05-15', 'female', '0987654321', 160, 55, NOW(), NOW()),
+(3, 'Load Test User', 'loadtest@example.com', 'loadtest', '1988-12-25', 'male', '0555666777', 175, 80, NOW(), NOW());
 
-CREATE TABLE IF NOT EXISTS products (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    stock INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Insert mock users cho testing
-INSERT INTO users (username, email, password_hash) VALUES 
-('testuser1', 'test1@example.com', '$2b$10$k8.fN/XvtWdjRZitcDn.v.5oVnWISnVKqdHhTOcCKMZmXq7qkfvMa'),
-('testuser2', 'test2@example.com', '$2b$10$k8.fN/XvtWdjRZitcDn.v.5oVnWISnVKqdHhTOcCKMZmXq7qkfvMa'),
-('loadtest', 'loadtest@example.com', '$2b$10$k8.fN/XvtWdjRZitcDn.v.5oVnWISnVKqdHhTOcCKMZmXq7qkfvMa');
-
--- Insert mock products
-INSERT INTO products (name, price, stock) VALUES 
-('Test Product 1', 99.99, 100),
-('Test Product 2', 149.99, 50),
-('Load Test Item', 29.99, 1000);
-
--- Create indexes for performance testing
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_products_name ON products(name);
+-- Insert mock data cho user-credential table
+INSERT INTO "user_credential" (id, user_id, password, created_at, updated_at) VALUES 
+(1, 1, '$2b$10$Rah5NRDnVwR7eZHSMG7J8OlOwQRnnlHimQceFeUPNSbete7EZi7wq', NOW(), NOW()),
+(2, 2, '$2b$10$Rah5NRDnVwR7eZHSMG7J8OlOwQRnnlHimQceFeUPNSbete7EZi7wq', NOW(), NOW()),
+(3, 3, '$2b$10$Rah5NRDnVwR7eZHSMG7J8OlOwQRnnlHimQceFeUPNSbete7EZi7wq', NOW(), NOW());
+-- Lưu ý: Password hash trên tương ứng với mật khẩu 'password123'
