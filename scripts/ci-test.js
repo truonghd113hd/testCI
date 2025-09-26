@@ -38,6 +38,8 @@ export default function () {
       timeout: '10s',
     });
 
+    console.log(`Login response status: ${loginRes.status}`);
+
     const loginSuccess = check(loginRes, {
       'login status is 200/201': (r) => r.status === 200 || r.status === 201,
       'login response time < 5000ms': (r) => r.timings.duration < 5000,
