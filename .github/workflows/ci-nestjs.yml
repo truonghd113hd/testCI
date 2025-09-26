@@ -278,8 +278,8 @@ jobs:
 
       - name: Run k6 load test
         run: |
-          echo "🎯 Running k6 advanced load test..."
-          npm run k6:advanced
+          echo "🎯 Running k6 ci load test..."
+          npm run k6:ci
 
       - name: Upload k6 results
         if: always()
