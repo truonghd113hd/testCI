@@ -37,6 +37,28 @@ k6-clean: ## Clean up k6 environment
 	docker-compose -f docker/docker-compose.yml down
 	rm -f k6-results.json
 
+# CI Caching Commands
+cache-clear-local: ## Clear local Docker cache
+	docker system prune -f
+	docker volume prune -f
+
+cache-prebuild: ## Pre-build Docker images for caching
+	docker compose -f docker/docker-compose.local.yml pull
+	docker compose -f docker/docker-compose.local.yml build
+
+cache-test: ## Test CI workflow with cache simulation
+	@echo "Simulating CI cache workflow..."
+	npm ci
+	docker compose -f docker/docker-compose.local.yml up -d
+	sleep 15
+	npm run build:prod || npm run build
+	npm run k6:ci
+	docker compose -f docker/docker-compose.local.yml down
+
+k6-test-ci: ## Run complete k6 CI test simulation
+	$(MAKE) cache-prebuild
+	$(MAKE) cache-test
+
 docker-local-config:
 	docker compose -f  docker/docker-compose.local.yml config
 

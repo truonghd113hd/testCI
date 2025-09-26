@@ -10,13 +10,13 @@ const apiCalls = new Counter('api_calls_total');
 // Test configurations
 export const options = {
   stages: [
-    { duration: '2m', target: 100 },   // Ramp up to 100
-    { duration: '3m', target: 500 },   // Ramp up to 500
-    { duration: '2m', target: 1000 },  // Ramp to 1000 users
-    { duration: '10m', target: 1000 }, // Stay at 1000 users
-    { duration: '3m', target: 500 },   // Ramp down to 500
-    { duration: '2m', target: 0 },     // Ramp down to 0
-  ],
+    { duration: '30s', target: 100 },  // Ramp up to 100 (30s)
+    { duration: '1m', target: 500 },   // Ramp up to 500 (1 min)
+    { duration: '30s', target: 1000 }, // Ramp to 1000 users (30s)
+    { duration: '2m', target: 1000 },  // Stay at 1000 users (2 min)
+    { duration: '30s', target: 500 },  // Ramp down to 500 (30s)
+    { duration: '30s', target: 0 },    // Ramp down to 0 (30s)
+  ], // Total: 5 minutes exactly
   thresholds: {
     http_req_failed: ['rate<0.02'],           // <2% errors
     http_req_duration: ['p(95)<200', 'p(99)<500'], // 95% < 200ms, 99% < 500ms
@@ -30,9 +30,15 @@ export const options = {
 
 // Test data
 const users = [
-  { email: 'test1@example.com', password: 'password123' },
-  { email: 'test2@example.com', password: 'password123' },
-  { email: 'loadtest@example.com', password: 'password123' }
+  { email: 'truonghd1994+1@gmail.com', password: '123' },
+  { email: 'truonghd1994+2@gmail.com', password: '123' },
+  { email: 'truonghd1994+3@gmail.com', password: '123' },
+  { email: 'truonghd1994+4@gmail.com', password: '123' },
+  { email: 'truonghd1994+5@gmail.com', password: '123' },
+  { email: 'truonghd1994+6@gmail.com', password: '123' },
+  { email: 'truonghd1994+7@gmail.com', password: '123' },
+  { email: 'truonghd1994+8@gmail.com', password: '123' },
+  { email: 'truonghd1994+9@gmail.com', password: '123' },
 ];
 
 const baseUrl = __ENV.BASE_URL || 'http://localhost:3000';
