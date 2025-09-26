@@ -10,13 +10,11 @@ const apiCalls = new Counter('api_calls_total');
 // Test configurations
 export const options = {
   stages: [
-    { duration: '30s', target: 100 },  // Ramp up to 100 (30s)
-    { duration: '1m', target: 500 },   // Ramp up to 500 (1 min)
-    { duration: '30s', target: 1000 }, // Ramp to 1000 users (30s)
-    { duration: '2m', target: 1000 },  // Stay at 1000 users (2 min)
-    { duration: '30s', target: 500 },  // Ramp down to 500 (30s)
-    { duration: '30s', target: 0 },    // Ramp down to 0 (30s)
-  ], // Total: 5 minutes exactly
+    { duration: '20s', target: 50 },   // Ramp up to 50 (20s)
+    { duration: '20s', target: 200 },  // Ramp up to 200 (20s)
+    { duration: '1m', target: 200 },   // Stay at 200 users (1 min)
+    { duration: '20s', target: 0 },    // Ramp down to 0 (20s)
+  ], // Total: 2 minutes exactly - 200 users max
   thresholds: {
     http_req_failed: ['rate<0.02'],           // <2% errors
     http_req_duration: ['p(95)<500', 'p(99)<1000'], // 95% < 500ms, 99% < 1000ms

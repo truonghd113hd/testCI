@@ -211,8 +211,24 @@ jobs:
           echo "✅ Database is ready"
           
           echo "🔍 Checking Redis connection..."
-          redis-cli -h localhost ping || exit 1
-          echo "✅ Redis is ready"
+          # Use Node.js to test Redis connection
+          node -e "
+            const net = require('net');
+            const client = net.createConnection(6379, 'localhost');
+            client.on('connect', () => {
+              console.log('✅ Redis is ready on port 6379');
+              client.end();
+              process.exit(0);
+            });
+            client.on('error', (err) => {
+              console.log('❌ Redis connection failed:', err.message);
+              process.exit(1);
+            });
+            setTimeout(() => {
+              console.log('❌ Redis connection timeout');
+              process.exit(1);
+            }, 5000);
+          " || exit 1
 
       - name: Start application with CI config
         env:
