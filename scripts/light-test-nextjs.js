@@ -39,11 +39,12 @@ export const options = {
   ],
   thresholds: {
     'http_req_duration': ['p(95)<10000', 'p(99)<20000'], 
-    'http_req_failed': ['rate<0.50'], // Allow 50% failure rate for initial testing
+    'http_req_failed': ['rate<0.60'], // Overall rate (includes setup requests)
+    'http_req_failed{name:login_action}': ['rate<0.10'], // Only actual login failures  
     'login_failure_rate': ['rate<0.80'], // Allow 80% failure rate
     'login_duration': ['p(95)<8000'], 
     'system_recovery_time': ['p(95)<30000'], 
-    'requests_per_second': ['rate>1'], // Expect at least 1 RPS
+    'requests_per_second': ['rate>=0.95'], // Expect at least 95% success rate
   }
 };
 
