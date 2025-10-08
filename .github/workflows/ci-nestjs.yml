@@ -14,6 +14,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx (for caching)
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Pre-pull Docker images
+        run: |
+          docker compose -f docker/docker-compose.local.yml pull postgres redis influxdb || true
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -72,3 +87,225 @@ jobs:
             dist/
             package-lock.json
             package.json
+
+      - name: Notify Telegram Success
+        if: success() && env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
+            -d chat_id=${TELEGRAM_CHAT_ID} \
+            -d text="✅ Build thành công cho branch ${{ github.ref }} tại commit ${{ github.sha }}."
+
+      - name: Notify Telegram Failure
+        if: failure() && env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
+            -d chat_id=${TELEGRAM_CHAT_ID} \
+            -d text="❌ Build thất bại cho branch ${{ github.ref }} tại commit ${{ github.sha }}."
+
+  k6-test:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: be-template
+          POSTGRES_USER: db_user_name
+          POSTGRES_PASSWORD: db_password@123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+
+      influxdb:
+        image: influxdb:1.8-alpine
+        env:
+          INFLUXDB_DB: k6
+          INFLUXDB_ADMIN_ENABLED: true
+          INFLUXDB_ADMIN_USER: admin
+          INFLUXDB_ADMIN_PASSWORD: admin123
+        ports:
+          - 8086:8086
+        options: >-
+          --health-cmd "wget --spider -q http://localhost:8086/ping || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install k6 (direct installation)
+        run: |
+          # Install k6 from binary release
+          K6_VERSION="0.52.0"
+          curl -L "https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-amd64.tar.gz" -o k6.tar.gz
+          tar -xzf k6.tar.gz
+          sudo mv "k6-v${K6_VERSION}-linux-amd64/k6" /usr/local/bin/k6
+          sudo chmod +x /usr/local/bin/k6
+          rm -rf k6.tar.gz "k6-v${K6_VERSION}-linux-amd64"
+          k6 version
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+
+      - name: Cache app build
+        uses: actions/cache@v4
+        with:
+          path: |
+            dist
+            node_modules/.cache
+          key: ${{ runner.os }}-app-build-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-app-build-
+
+      - name: Install dependencies (cached)
+        run: npm ci
+
+      - name: Run database migrations
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: be-template
+          DB_USER: db_user_name
+          DB_PASSWORD: db_password@123
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NODE_ENV: test
+        run: |
+          echo "🗄️ Running database migrations..."
+          npm run migration:run || echo "⚠️ Migration failed or no migrations to run"
+
+      - name: Cache test database setup
+        id: cache-db
+        uses: actions/cache@v4
+        with:
+          path: /tmp/db-setup-done
+          key: ${{ runner.os }}-db-setup-${{ hashFiles('docker/test-data.sql') }}
+
+      - name: Setup test database
+        if: steps.cache-db.outputs.cache-hit != 'true'
+        run: |
+          PGPASSWORD=db_password@123 psql -h localhost -U db_user_name -d be-template -f docker/test-data.sql
+          touch /tmp/db-setup-done
+
+      - name: Verify services are ready
+        run: |
+          echo "🔍 Checking database connection..."
+          PGPASSWORD=db_password@123 psql -h localhost -U db_user_name -d be-template -c "SELECT 1;" || exit 1
+          echo "✅ Database is ready"
+          
+          echo "🔍 Checking Redis connection..."
+          # Use Node.js to test Redis connection
+          node -e "
+            const net = require('net');
+            const client = net.createConnection(6379, 'localhost');
+            client.on('connect', () => {
+              console.log('✅ Redis is ready on port 6379');
+              client.end();
+              process.exit(0);
+            });
+            client.on('error', (err) => {
+              console.log('❌ Redis connection failed:', err.message);
+              process.exit(1);
+            });
+            setTimeout(() => {
+              console.log('❌ Redis connection timeout');
+              process.exit(1);
+            }, 5000);
+          " || exit 1
+
+      - name: Start application with CI config
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: be-template
+          DB_USER: db_user_name
+          DB_PASSWORD: db_password@123
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: ci_test_jwt_secret_key_2024
+        run: |
+          echo "🚀 Starting NestJS application..."
+          npm run start:prod &
+          APP_PID=$!
+          echo "Application started with PID: $APP_PID"
+          
+          # Wait for application to be ready with better health check
+          echo "⏳ Waiting for application to be ready..."
+          for i in {1..30}; do
+            echo "Attempt $i: Checking http://localhost:3001/"
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/ 2>/dev/null || echo "000")
+            if [ "$HTTP_STATUS" = "200" ] || [ "$HTTP_STATUS" = "404" ]; then
+              echo "✅ Application is ready after ${i}0 seconds (HTTP Status: $HTTP_STATUS)"
+              curl -I http://localhost:3001/ || true
+              break
+            elif [ $i -eq 30 ]; then
+              echo "❌ Application failed to start within 5 minutes (HTTP Status: $HTTP_STATUS)"
+              echo "Process status:"
+              ps aux | grep node || true
+              echo "Port 3001 status:"
+              netstat -tlnp | grep :3001 || true
+              echo "Application logs:"
+              jobs -l
+              kill $APP_PID 2>/dev/null || true
+              exit 1
+            else
+              echo "Application not ready yet (HTTP Status: $HTTP_STATUS), waiting 10 seconds..."
+              sleep 10
+            fi
+          done
+
+      - name: Create k6 database
+        run: |
+          curl -i -XPOST 'http://localhost:8086/query' --data-urlencode "q=CREATE DATABASE k6" || true
+
+      - name: Run k6 load test
+        run: |
+          echo "🎯 Running k6 ci load test..."
+          npm run k6:ci
+
+      - name: Upload k6 results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-results
+          path: k6-results.json
+
+      - name: Stop NestJS application
+        if: always()
+        run: |
+          echo "🛑 Stopping NestJS application..."
+          pkill -f "node dist/src/main" || pkill -f "node src/main" || true
+          sleep 2
+          echo "✅ Application stopped."

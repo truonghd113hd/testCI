@@ -21,8 +21,19 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/.bin/typeorm",
+    "migration:run": "npm run typeorm -- migration:run -d datasource.ts",
     "seed:run": "ts-node -r tsconfig-paths/register",
-    "worker": "ts-node -r tsconfig-paths/register ./src/worker.ts"
+    "worker": "ts-node -r tsconfig-paths/register ./src/worker.ts",
+    "k6": "k6 run src/modules/__tests__/LoadTest/script.js",
+    "k6:advanced": "k6 run scripts/advanced-test.js",
+    "k6:ci": "k6 run scripts/ci-test.js",
+    "k6:cloud": "k6 cloud scripts/cloud-test.js",
+    "k6:local": "k6 run --out json=k6-results.json scripts/advanced-test.js",
+    "k6:influx": "k6 run --out influxdb=http://localhost:8086/k6 scripts/advanced-test.js",
+    "k6:zenia": "./scripts/run-k6-test.sh",
+    "k6:zenia-env": "k6 run scripts/advanced-test-UAT-Zenia.js",
+    "k6:single": "k6 run scripts/single-user-test.js",
+    "k6:light": "k6 run scripts/light-test-nextjs.js"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^2.0.2",
